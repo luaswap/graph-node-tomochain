@@ -1,0 +1,19 @@
+[workspace]
+members = [
+    "core",
+    "chain/ethereum",
+    "chain/arweave",
+    "graphql",
+    "mock",
+    "node",
+    "runtime/wasm",
+    "runtime/derive",
+    "server/http",
+    "server/json-rpc",
+    "server/index-node",
+    "server/metrics",
+    "store/postgres",
+    "store/test-store",
+    "graph",
+    "tests",
+]

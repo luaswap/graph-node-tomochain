@@ -1,0 +1,16 @@
+[package]
+name = "test-store"
+version = "0.19.2"
+authors = ["Leonardo Yvens <leoyvens@gmail.com>"]
+edition = "2018"
+description = "Provides static store instance for tests."
+
+[dependencies]
+graph-graphql = { path = "../../graphql" }
+graphql-parser = "0.2.3"
+graph-mock = { path = "../../mock" }
+graph = { path = "../../graph" }
+graph-store-postgres = { path = "../postgres" }
+lazy_static = "1.1"
+hex-literal = "0.3"
+diesel = { version = "1.4.5", features = ["postgres", "serde_json", "numeric", "r2d2"] }
