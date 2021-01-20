@@ -68,7 +68,8 @@ lazy_static! {
     static ref ETH_CALL_FULL_LOG: bool = std::env::var("GRAPH_ETH_CALL_FULL_LOG").is_ok();
 
     /// This is not deterministic and will be removed after the testnet.
-    static ref ETH_CALL_BY_NUMBER: bool = std::env::var("GRAPH_ETH_CALL_BY_NUMBER").is_ok();
+    // static ref ETH_CALL_BY_NUMBER: bool = std::env::var("GRAPH_ETH_CALL_BY_NUMBER").is_ok();
+    static ref ETH_CALL_BY_NUMBER: bool = true;
 }
 
 impl<T: web3::Transport> CheapClone for EthereumAdapter<T> {
@@ -1214,6 +1215,8 @@ where
             Ok(data) => data,
             Err(e) => return Box::new(future::err(EthereumContractCallError::EncodingError(e))),
         };
+
+
 
         if *ETH_CALL_FULL_LOG {
             trace!(logger, "eth_call";
