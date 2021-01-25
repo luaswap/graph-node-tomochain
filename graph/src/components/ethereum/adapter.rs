@@ -962,9 +962,9 @@ pub async fn blocks_with_triggers(
         .compat()
         .await?;
 
-    // let mut block_hashes: HashSet<H256> = HashSet::new();
-    let mut block_hashes: HashSet<H256> = 
-        triggers.iter().map(EthereumTrigger::block_hash).collect();
+    let mut block_hashes: HashSet<H256> = HashSet::new();
+    // let mut block_hashes: HashSet<H256> = 
+    //     triggers.iter().map(EthereumTrigger::block_hash).collect();
     let mut triggers_by_block: HashMap<u64, Vec<EthereumTrigger>> =
         triggers.into_iter().fold(HashMap::new(), |mut map, t| {
             map.entry(t.block_number()).or_default().push(t);
