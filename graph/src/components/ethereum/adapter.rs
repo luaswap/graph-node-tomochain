@@ -970,13 +970,13 @@ pub async fn blocks_with_triggers(
             map.entry(t.block_number()).or_default().push(t);
             map
         });
-    for bl in &block_hashes {
-            debug!(logger, "block_hashes_before {}", bl);
-    }
     debug!(logger, "Found {} relevant block(s)", block_hashes.len());
     // Make sure `to` is included, even if empty.
     block_hashes.insert(to_hash);
     triggers_by_block.entry(to).or_insert(Vec::new());
+    for bl in &block_hashes {
+            debug!(logger, "block_hashes_before {}", bl);
+    }
 
     // let  cached_blocks = chain_store
     //         .blocks(block_hashes.iter().cloned().collect())

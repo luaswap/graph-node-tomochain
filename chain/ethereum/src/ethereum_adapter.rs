@@ -43,7 +43,7 @@ lazy_static! {
         .expect("invalid number of parallel Ethereum block ranges to scan");
 
     static ref BLOCK_BATCH_SIZE: usize = std::env::var("ETHEREUM_BLOCK_BATCH_SIZE")
-            .unwrap_or("10".into())
+            .unwrap_or("200".into())
             .parse::<usize>()
             .expect("invalid ETHEREUM_BLOCK_BATCH_SIZE env var");
 
