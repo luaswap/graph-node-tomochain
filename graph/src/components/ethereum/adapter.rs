@@ -648,6 +648,15 @@ pub trait EthereumAdapter: Send + Sync + 'static {
         block_hashes: HashSet<H256>,
     ) -> Box<dyn Stream<Item = LightEthereumBlock, Error = Error> + Send>;
 
+    /// Load Ethereum blocks in bulk, returning results as they come back as a Stream.
+    /// May use the `chain_store` as a cache.
+    fn load_blocks_by_numbers(
+        &self,
+        logger: Logger,
+        chain_store: Arc<dyn ChainStore>,
+        block_numbers: HashSet<u64>,
+    ) -> Box<dyn Stream<Item = LightEthereumBlock, Error = Error> + Send>;
+
     /// Reorg safety: `to` must be a final block.
     fn block_range_to_ptrs(
         &self,
@@ -963,37 +972,30 @@ pub async fn blocks_with_triggers(
         .await?;
 
     // let mut block_hashes: HashSet<H256> = HashSet::new();
-    let mut block_hashes: HashSet<H256> = 
-         triggers.iter().map(EthereumTrigger::block_hash).collect();
+    // let mut block_hashes: HashSet<H256> = 
+    //     triggers.iter().map(EthereumTrigger::block_hash).collect();
+    let mut block_numbers: HashSet<u64> = 
+        triggers.iter().map(EthereumTrigger::block_number).collect();
     let mut triggers_by_block: HashMap<u64, Vec<EthereumTrigger>> =
         triggers.into_iter().fold(HashMap::new(), |mut map, t| {
             map.entry(t.block_number()).or_default().push(t);
             map
         });
-    debug!(logger, "Found {} relevant block(s)", block_hashes.len());
+    debug!(logger, "Found {} relevant block(s)", block_numbers.len());
     // Make sure `to` is included, even if empty.
-    block_hashes.insert(to_hash);
+    // block_hashes.insert(to_hash);
+    block_numbers.insert(to);
     triggers_by_block.entry(to).or_insert(Vec::new());
-    for bl in &block_hashes {
-            debug!(logger, "block_hashes_before {}", bl);
-    }
-
-    // let  cached_blocks = chain_store
-    //         .blocks(block_hashes.iter().cloned().collect())
-    //         .map_err(|e| error!(&logger, "Error accessing block cache {}", e))
-    //         .unwrap_or_default();
-    
-    // let  block_vec = Vec::from_iter(
-    //             block_hashes
-    //                 .into_iter()
-    //                 .filter(|hash| cached_blocks.iter().any(|b| b.hash == Some(*hash))),
-    //         );
-    // let mut block_hashes_on_chain: HashSet<H256> = block_vec.into_iter().collect();
-    // block_hashes_on_chain.insert(to_hash);
+    // for bl in &block_hashes {
+    //     debug!(logger, "block_hashes {}", bl);
+    // }
+    // for bl in &block_numbers {
+    //         debug!(logger, "block_numbers_before {}", bl);
+    // }
 
     let mut blocks = adapter
-        // .load_blocks(logger1, chain_store, block_hashes_on_chain)
-        .load_blocks(logger1, chain_store, block_hashes)
+        // .load_blocks(logger1, chain_store, block_hashes)
+        .load_blocks_by_numbers(logger1, chain_store, block_numbers)
         .and_then(
             move |block| match triggers_by_block.remove(&block.number()) {
                 Some(triggers) => Ok(EthereumBlockWithTriggers::new(

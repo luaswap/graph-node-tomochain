@@ -1211,6 +1211,9 @@ pub trait ChainStore: Send + Sync + 'static {
     /// Returns the blocks present in the store.
     fn blocks(&self, hashes: Vec<H256>) -> Result<Vec<LightEthereumBlock>, Error>;
 
+    /// Returns the blocks present in the store.
+    fn blocks_by_numbers(&self, numbers: Vec<u64>) -> Result<Vec<LightEthereumBlock>, Error>;
+
     /// Get the `offset`th ancestor of `block_hash`, where offset=0 means the block matching
     /// `block_hash` and offset=1 means its parent. Returns None if unable to complete due to
     /// missing blocks in the chain store.

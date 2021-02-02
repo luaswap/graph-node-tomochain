@@ -40,6 +40,8 @@ mock! {
 
         fn blocks(&self, hashes: Vec<H256>) -> Result<Vec<LightEthereumBlock>, Error>;
 
+        fn blocks_by_numbers(&self, numbers: Vec<u64>) -> Result<Vec<LightEthereumBlock>, Error>;
+
         fn ancestor_block(
             &self,
             block_ptr: EthereumBlockPointer,
@@ -47,8 +49,6 @@ mock! {
         ) -> Result<Option<EthereumBlock>, Error>;
 
         fn cleanup_cached_blocks(&self, ancestor_count: u64) -> Result<(BlockNumber, usize), Error>;
-
-        fn block_hashes_by_block_number(&self, number: u64) -> Result<Vec<H256>, Error>;
 
         fn confirm_block_hash(&self, number: u64, hash: &H256) -> Result<usize, Error>;
     }

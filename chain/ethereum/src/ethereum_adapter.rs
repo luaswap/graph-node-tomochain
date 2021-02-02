@@ -606,6 +606,35 @@ where
         .buffered(*BLOCK_BATCH_SIZE)
         .map(|b| b.into())
     }
+
+    /// Request blocks by hash through JSON-RPC.
+    fn load_blocks_rpc_2(
+        &self,
+        logger: Logger,
+        block_nums: Vec<u64>,
+    ) -> impl Stream<Item = LightEthereumBlock, Error = Error> + Send {
+        let web3 = self.web3.clone();
+
+        stream::iter_ok::<_, Error>(block_nums.into_iter().map(move |block_num| {
+            let web3 = web3.clone();
+            retry(format!("load block {}", block_num), &logger)
+                .limit(*REQUEST_RETRIES)
+                .timeout_secs(*JSON_RPC_TIMEOUT)
+                .run(move || {
+                    web3.eth()
+                        .block_with_txs(BlockId::Number(BlockNumber::Number(block_num.into())))
+                        .from_err::<Error>()
+                        .map_err(|e| e.compat())
+                        .and_then(move |block| {
+                            block.ok_or_else(|| {
+                                format_err!("Ethereum node did not find block {:?}", block_num).compat()
+                            })
+                        })
+                })
+                .from_err()
+        }))
+        .buffered(*BLOCK_BATCH_SIZE)
+    }
 }
 
 impl<T> EthereumAdapterTrait for EthereumAdapter<T>
@@ -1300,6 +1329,42 @@ where
         debug!(logger, "Requesting {} block(s)", missing_blocks.len());
         Box::new(
             self.load_blocks_rpc(logger.clone(), missing_blocks.into_iter().collect())
+                .collect()
+                .map(move |new_blocks| {
+                    if let Err(e) = chain_store.upsert_light_blocks(new_blocks.clone()) {
+                        error!(logger, "Error writing to block cache {}", e);
+                    }
+                    blocks.extend(new_blocks);
+                    blocks.sort_by_key(|block| block.number);
+                    stream::iter_ok(blocks)
+                })
+                .flatten_stream(),
+        )
+    }
+
+    /// Load Ethereum blocks in bulk, returning results as they come back as a Stream.
+    fn load_blocks_by_numbers(
+        &self,
+        logger: Logger,
+        chain_store: Arc<dyn ChainStore>,
+        block_numbers: HashSet<u64>,
+    ) -> Box<dyn Stream<Item = LightEthereumBlock, Error = Error> + Send> {
+        // Search for the block in the store first then use json-rpc as a backup.
+        let mut blocks = chain_store
+            .blocks_by_numbers(block_numbers.iter().cloned().collect())
+            .map_err(|e| error!(&logger, "Error accessing block cache {}", e))
+            .unwrap_or_default();
+
+        let missing_blocks = Vec::from_iter(
+            block_numbers
+                .into_iter()
+                .filter(|&n| !blocks.iter().any(|b| b.number.unwrap().as_u64() == n)),
+        );
+
+        // Return a stream that lazily loads batches of blocks.
+        debug!(logger, "Requesting {} block(s)", missing_blocks.len());
+        Box::new(
+            self.load_blocks_rpc_2(logger.clone(), missing_blocks.into_iter().collect())
                 .collect()
                 .map(move |new_blocks| {
                     if let Err(e) = chain_store.upsert_light_blocks(new_blocks.clone()) {

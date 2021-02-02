@@ -259,6 +259,23 @@ impl ChainStoreTrait for ChainStore {
             .collect()
     }
 
+    fn blocks_by_numbers(&self, numbers: Vec<u64>) -> Result<Vec<LightEthereumBlock>, Error> {
+        use crate::db_schema::ethereum_blocks::dsl::*;
+        use diesel::dsl::{any, sql};
+        use diesel::sql_types::Jsonb;
+
+        ethereum_blocks
+            .select(sql::<Jsonb>("data -> 'block'"))
+            .filter(network_name.eq(&self.network))
+            .filter(number.eq(any(Vec::from_iter(
+                numbers.into_iter().map(|n| n as i64),
+            ))))
+            .load::<serde_json::Value>(&*self.get_conn()?)?
+            .into_iter()
+            .map(|block| serde_json::from_value(block).map_err(Into::into))
+            .collect()
+    }
+
     fn ancestor_block(
         &self,
         block_ptr: EthereumBlockPointer,

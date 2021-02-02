@@ -311,6 +311,10 @@ impl ChainStoreTrait for NetworkStore {
         self.chain_store.blocks(hashes)
     }
 
+    fn blocks_by_numbers(&self, numbers: Vec<u64>) -> Result<Vec<LightEthereumBlock>, failure::Error> {
+        self.chain_store.blocks_by_numbers(numbers)
+    }
+
     fn ancestor_block(
         &self,
         block_ptr: EthereumBlockPointer,
