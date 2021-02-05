@@ -972,10 +972,10 @@ pub async fn blocks_with_triggers(
         .await?;
 
     // let mut block_hashes: HashSet<H256> = HashSet::new();
-    // let mut block_hashes: HashSet<H256> = 
-    //     triggers.iter().map(EthereumTrigger::block_hash).collect();
-    let mut block_numbers: HashSet<u64> = 
-        triggers.iter().map(EthereumTrigger::block_number).collect();
+    let mut block_hashes: HashSet<H256> = 
+        triggers.iter().map(EthereumTrigger::block_hash).collect();
+    // let mut block_numbers: HashSet<u64> = 
+    //     triggers.iter().map(EthereumTrigger::block_number).collect();
     let mut triggers_by_block: HashMap<u64, Vec<EthereumTrigger>> =
         triggers.into_iter().fold(HashMap::new(), |mut map, t| {
             map.entry(t.block_number()).or_default().push(t);
@@ -983,8 +983,8 @@ pub async fn blocks_with_triggers(
         });
     debug!(logger, "Found {} relevant block(s)", block_numbers.len());
     // Make sure `to` is included, even if empty.
-    // block_hashes.insert(to_hash);
-    block_numbers.insert(to);
+    block_hashes.insert(to_hash);
+    // block_numbers.insert(to);
     triggers_by_block.entry(to).or_insert(Vec::new());
     // for bl in &block_hashes {
     //     debug!(logger, "block_hashes {}", bl);
@@ -994,8 +994,8 @@ pub async fn blocks_with_triggers(
     // }
 
     let mut blocks = adapter
-        // .load_blocks(logger1, chain_store, block_hashes)
-        .load_blocks_by_numbers(logger1, chain_store, block_numbers)
+        .load_blocks(logger1, chain_store, block_hashes)
+        // .load_blocks_by_numbers(logger1, chain_store, block_numbers)
         .and_then(
             move |block| match triggers_by_block.remove(&block.number()) {
                 Some(triggers) => Ok(EthereumBlockWithTriggers::new(
