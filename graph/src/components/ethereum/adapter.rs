@@ -981,7 +981,8 @@ pub async fn blocks_with_triggers(
             map.entry(t.block_number()).or_default().push(t);
             map
         });
-    debug!(logger, "Found {} relevant block(s)", block_numbers.len());
+    // debug!(logger, "Found {} relevant block(s)", block_numbers.len());
+    debug!(logger, "Found {} relevant block(s)", block_hashes.len());
     // Make sure `to` is included, even if empty.
     block_hashes.insert(to_hash);
     // block_numbers.insert(to);
